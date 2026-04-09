@@ -29,13 +29,20 @@ export async function POST(req: NextRequest) {
     const body: AIAnalysisRequest = await req.json()
     const { rendering_base64, drawing_base64, venue_name, booth_sqm, country } = body
 
+    const detectMediaType = (base64: string): 'image/jpeg' | 'image/png' | 'image/webp' | 'image/gif' => {
+      if (base64.startsWith('/9j/')) return 'image/jpeg'
+      if (base64.startsWith('iVBORw0KGgo')) return 'image/png'
+      if (base64.startsWith('UklGR')) return 'image/webp'
+      return 'image/jpeg'
+    }
+
     // 이미지 콘텐츠 구성
     const imageContent: Anthropic.ImageBlockParam[] = [
       {
         type: 'image',
         source: {
           type: 'base64',
-          media_type: 'image/png',
+          media_type: detectMediaType(rendering_base64),
           data: rendering_base64,
         },
       },
@@ -46,7 +53,7 @@ export async function POST(req: NextRequest) {
         type: 'image',
         source: {
           type: 'base64',
-          media_type: 'image/png',
+          media_type: detectMediaType(drawing_base64),
           data: drawing_base64,
         },
       })
