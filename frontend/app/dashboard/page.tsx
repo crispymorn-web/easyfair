@@ -29,7 +29,7 @@ export default function DashboardPage() {
   ).length
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-8">
+    <div className="px-8 py-8 max-w-4xl">
       {/* 헤더 */}
       <div className="flex items-center justify-between mb-8">
         <div>

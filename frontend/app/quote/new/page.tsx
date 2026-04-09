@@ -176,7 +176,7 @@ export default function NewQuotePage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto px-6 py-8">
+    <div className="px-8 py-8 max-w-3xl">
       <Steps current={currentStep as 1|2|3|4} />
 
       {/* ── STEP 1: 전시 정보 ── */}

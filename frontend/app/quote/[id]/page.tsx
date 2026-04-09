@@ -67,7 +67,7 @@ export default function QuoteEditorPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-6">
+    <div className="px-6 py-6 max-w-6xl">
       {/* 헤더 */}
       <div className="flex items-center gap-4 mb-6">
         <button onClick={() => router.push('/dashboard')} className="text-gray-400 hover:text-gray-600">
