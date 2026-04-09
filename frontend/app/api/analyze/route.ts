@@ -106,16 +106,28 @@ export async function POST(req: NextRequest) {
       throw new Error('AI 응답에서 텍스트를 찾을 수 없습니다.')
     }
 
-    // JSON 파싱 (방어적 처리)
+    const rawText = textContent.text
+
+    // JSON 파싱 - 여러 방법 시도
     let result: AIAnalysisResult
     try {
-      const cleaned = textContent.text
-        .replace(/```json\n?/g, '')
-        .replace(/```\n?/g, '')
+      // 1. 마크다운 코드블록 제거 후 파싱
+      const cleaned = rawText
+        .replace(/```json\s*/gi, '')
+        .replace(/```\s*/g, '')
         .trim()
-      result = JSON.parse(cleaned)
-    } catch {
-      throw new Error('AI 응답 JSON 파싱 실패')
+
+      // 2. 첫 번째 { 부터 마지막 } 까지 추출 (텍스트가 앞뒤에 붙은 경우 대응)
+      const jsonStart = cleaned.indexOf('{')
+      const jsonEnd   = cleaned.lastIndexOf('}')
+      if (jsonStart === -1 || jsonEnd === -1) {
+        throw new Error(`JSON 객체를 찾을 수 없습니다. 응답: ${rawText.slice(0, 200)}`)
+      }
+      const jsonStr = cleaned.slice(jsonStart, jsonEnd + 1)
+      result = JSON.parse(jsonStr)
+    } catch (parseErr) {
+      const msg = parseErr instanceof Error ? parseErr.message : String(parseErr)
+      throw new Error(`JSON 파싱 실패: ${msg}`)
     }
 
     return NextResponse.json({ data: result, error: null })
