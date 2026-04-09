@@ -51,14 +51,27 @@ export default function Sidebar() {
   return (
     <aside className="w-56 flex-shrink-0 bg-brand-900 text-white flex flex-col h-screen sticky top-0">
       {/* Logo */}
-      <div className="px-5 py-5 border-b border-brand-800">
-        <Link href="/" className="flex items-center gap-2">
-          <div className="w-7 h-7 bg-accent-500 rounded-lg flex items-center justify-center text-xs font-bold text-brand-900">
-            ef
-          </div>
-          <span className="font-bold text-base tracking-tight">easyfair</span>
+      <div className="px-4 py-4 border-b border-brand-800">
+        <Link href="/" className="block">
+          <svg viewBox="0 0 176 52" xmlns="http://www.w3.org/2000/svg" className="w-full max-w-[160px]">
+            {/* EASY */}
+            <text x="1" y="36"
+              fontFamily="'Helvetica Neue', Helvetica, Arial, sans-serif"
+              fontWeight="800" fontSize="33" fill="#FFE896">EASY</text>
+            {/* FAIR 배경 박스 */}
+            <rect x="90" y="1" width="85" height="37" fill="#FFE896" rx="1"/>
+            {/* FAIR */}
+            <text x="92" y="36"
+              fontFamily="'Helvetica Neue', Helvetica, Arial, sans-serif"
+              fontWeight="800" fontSize="33" fill="white">FAIR</text>
+            {/* 태그라인 */}
+            <text x="1" y="50"
+              fontFamily="'Helvetica Neue', Helvetica, Arial, sans-serif"
+              fontWeight="300" fontSize="6.5" fill="#FFE896" letterSpacing="2.8">
+              GATEWAY TO THE MARKET
+            </text>
+          </svg>
         </Link>
-        <p className="text-[10px] text-brand-400 mt-1 ml-9">AI 전시 견적 플랫폼</p>
       </div>
 
       {/* Navigation */}
