@@ -4,8 +4,8 @@ import { CheckCircle2, ArrowRight } from 'lucide-react'
 const PLANS = [
   {
     name: 'Free',
-    price: '$0',
-    period: '/ 월',
+    price: '0원',
+    period: '/ 분기',
     desc: '개인 및 소규모 테스트용',
     color: 'border-gray-200',
     badge: '',
@@ -21,8 +21,8 @@ const PLANS = [
   },
   {
     name: 'Pro',
-    price: '$49',
-    period: '/ 월',
+    price: '5만원',
+    period: '/ 분기',
     desc: '전시 기획사 · 컨트랙터',
     color: 'border-brand-600',
     badge: '가장 인기',
@@ -40,8 +40,8 @@ const PLANS = [
   },
   {
     name: 'Business',
-    price: '$149',
-    period: '/ 월',
+    price: '15만원',
+    period: '/ 분기',
     desc: '팀 · 대형 전시 대행사',
     color: 'border-gray-200',
     badge: '',
