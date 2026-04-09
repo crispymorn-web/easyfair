@@ -6,6 +6,7 @@ import { Plus, Trash2, Download, Save, ArrowLeft } from 'lucide-react'
 import { useQuoteStore } from '@/hooks/useQuoteStore'
 import { formatUSD, formatKRW, groupItemsBySection, cn } from '@/lib/utils'
 import { exportToExcel } from '@/lib/exportExcel'
+import { createClient } from '@/lib/supabase/client'
 import type { Quote, QuoteItem, QuoteSection } from '@/types'
 import { SECTION_META } from '@/lib/constants'
 
@@ -67,9 +68,33 @@ export default function QuoteEditorPage() {
     )
   }
 
-  // 서버 Excel 다운로드 (openpyxl 전문 포맷)
-  const handleServerExcel = () => {
-    window.open(`/api/v1/export/${params.id}/xlsx`, '_blank')
+  // 서버 Excel 다운로드 (openpyxl 전문 포맷) - JWT 인증 포함
+  const handleServerExcel = async () => {
+    const supabase = createClient()
+    const { data: { session } } = await supabase.auth.getSession()
+
+    // 세션 없거나 draft 모드 → 클라이언트 Excel로 폴백
+    if (!session?.access_token || !quote) {
+      handleExcelDownload()
+      return
+    }
+
+    try {
+      const res = await fetch(`/api/v1/export/${params.id}/xlsx`, {
+        headers: { 'Authorization': `Bearer ${session.access_token}` },
+      })
+      if (!res.ok) { handleExcelDownload(); return }
+
+      const blob = await res.blob()
+      const url  = URL.createObjectURL(blob)
+      const a    = document.createElement('a')
+      a.href     = url
+      a.download = `easyfair_${quote.client_name ?? 'quote'}.xlsx`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch {
+      handleExcelDownload()
+    }
   }
 
   return (
