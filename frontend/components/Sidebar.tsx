@@ -12,6 +12,7 @@ import {
   Cpu,
   PenLine,
   ChevronRight,
+  DollarSign,
 } from 'lucide-react'
 
 const NAV = [
@@ -36,6 +37,12 @@ const NAV = [
     items: [
       { label: '전시장 검색', href: '/venues', icon: Building2 },
       { label: '플랜 & 결제', href: '/pricing', icon: CreditCard },
+    ],
+  },
+  {
+    section: '관리자',
+    items: [
+      { label: '단가표 관리', href: '/admin/prices', icon: DollarSign },
     ],
   },
 ]

@@ -148,6 +148,24 @@ export interface ApiError {
 
 export type Result<T> = ApiResponse<T> | ApiError
 
+// ── Price Catalog ─────────────────────────────────────────────────────────
+export interface PriceCatalogItem {
+  id: string
+  venue_id: string | null        // null = 전체 기본값
+  section: QuoteSection
+  item_key: string               // e.g. "wall_panel_sqm"
+  label_ko: string
+  label_en: string
+  unit: string
+  unit_price_usd: number
+  price_type: 'base' | 'absolute'  // base=factor 적용, absolute=고정
+  keywords: string[]
+  active: boolean
+  sort_order: number
+  notes: string
+  updated_at: string
+}
+
 // ── Exchange Rate ─────────────────────────────────────────────────────────
 export interface ExchangeRates {
   USD_KRW: number

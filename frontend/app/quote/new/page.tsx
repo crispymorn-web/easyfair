@@ -10,7 +10,7 @@ import { ChevronRight, ChevronLeft, Upload, X, Loader2, CheckCircle, AlertTriang
 import { useQuoteStore } from '@/hooks/useQuoteStore'
 import { fileToBase64, generateId, cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
-import type { AIAnalysisResult } from '@/types'
+import type { AIAnalysisResult, PriceCatalogItem } from '@/types'
 
 // ── Step 1 스키마 ──────────────────────────────────────────
 const step1Schema = z.object({
@@ -101,6 +101,7 @@ export default function NewQuotePage() {
   const [drawingFile,   setDrawingFile]   = useState<File | null>(null)
   const [analysisError, setAnalysisError] = useState<string | null>(null)
   const [analysisData,  setAnalysisData]  = useState<AIAnalysisResult | null>(null)
+  const [priceCatalog,  setPriceCatalog]  = useState<PriceCatalogItem[]>([])
 
   const onDropRendering = useCallback((files: File[]) => {
     if (files[0]) setRenderingFile(files[0])
@@ -151,7 +152,16 @@ export default function NewQuotePage() {
       const result: AIAnalysisResult = json.data
       setAnalysisResult(result)
       setAnalysisData(result)
-      applyAIItems(result.items, draft.venue_id!)
+      // DB 단가표 조회 (venue_id 기반, 실패해도 계속)
+      let catalog: PriceCatalogItem[] = priceCatalog
+      if (catalog.length === 0) {
+        try {
+          const catRes = await fetch(`/api/prices?venue_id=${draft.venue_id}`)
+          const catJson = await catRes.json()
+          if (catJson.data) { catalog = catJson.data; setPriceCatalog(catalog) }
+        } catch { /* 폴백으로 진행 */ }
+      }
+      applyAIItems(result.items, draft.venue_id!, catalog)
     } catch (e: any) {
       setAnalysisError(e.message)
     } finally {

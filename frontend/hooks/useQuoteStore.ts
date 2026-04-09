@@ -1,9 +1,10 @@
 import { create } from 'zustand'
-import { Quote, QuoteItem, QuoteCreateInput, AIAnalysisResult } from '@/types'
+import { Quote, QuoteItem, QuoteCreateInput, AIAnalysisResult, PriceCatalogItem } from '@/types'
 import { generateId, calcItemAmount } from '@/lib/utils'
 import { SECTION_META, BASE_PRICES_USD, VENUE_COST_FACTORS } from '@/lib/constants'
+import { lookupUnitPrice } from '@/lib/priceCatalog'
 
-// AI 항목 설명 → 기준 단가 키워드 매핑
+// AI 항목 설명 → 기준 단가 키워드 매핑 (catalog 없을 때 폴백)
 function estimateUnitPrice(description: string, section: string, venueFactor: number): number {
   const d = description.toLowerCase()
 
@@ -69,7 +70,7 @@ interface QuoteStore {
   setAnalysisResult: (r: AIAnalysisResult) => void
 
   // 아이템 CRUD
-  applyAIItems: (aiItems: AIAnalysisResult['items'], venueId: string) => void
+  applyAIItems: (aiItems: AIAnalysisResult['items'], venueId: string, catalog?: PriceCatalogItem[]) => void
   addItem: (section: keyof typeof SECTION_META) => void
   updateItem: (id: string, patch: Partial<QuoteItem>) => void
   removeItem: (id: string) => void
@@ -95,11 +96,14 @@ export const useQuoteStore = create<QuoteStore>((set, get) => ({
   setAnalyzing: (v) => set({ isAnalyzing: v }),
   setAnalysisResult: (r) => set({ analysisResult: r }),
 
-  applyAIItems: (aiItems, venueId) => {
+  applyAIItems: (aiItems, venueId, catalog) => {
     const { usdKrw } = get()
     const venueFactor = VENUE_COST_FACTORS[venueId] ?? VENUE_COST_FACTORS['default']
     const items: QuoteItem[] = aiItems.map((ai, idx) => {
-      const unitPrice = estimateUnitPrice(ai.description, ai.section, venueFactor)
+      // DB 단가표가 있으면 우선 사용, 없으면 폴백
+      const unitPrice = catalog && catalog.length > 0
+        ? lookupUnitPrice(ai.description, ai.section, catalog, venueFactor)
+        : estimateUnitPrice(ai.description, ai.section, venueFactor)
       const amountUsd = ai.quantity * unitPrice
       return {
         id: generateId(),
