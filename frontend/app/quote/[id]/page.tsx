@@ -19,16 +19,22 @@ export default function QuoteEditorPage() {
 
   // 견적 로드
   useEffect(() => {
+    // draft 모드: Zustand store 데이터 사용 (DB 저장 생략)
+    if (typeof window !== 'undefined') {
+      const isDraft = new URLSearchParams(window.location.search).get('draft') === 'true'
+      if (isDraft) {
+        const storeDraft = useQuoteStore.getState().draft
+        if (storeDraft) setQuote(storeDraft as Quote)
+        return
+      }
+    }
+
     fetch(`/api/quotes/${params.id}`)
       .then(r => r.json())
       .then(({ data }) => {
         if (!data) return
         setQuote(data)
         setDraft(data)
-        // items는 useQuoteStore에 이미 있으면 유지, 없으면 DB에서 로드
-        if (items.length === 0 && data.items?.length > 0) {
-          // store에 items 세팅 (직접 set)
-        }
       })
   }, [params.id])
 

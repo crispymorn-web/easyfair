@@ -8,8 +8,8 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { ChevronRight, ChevronLeft, Upload, X, Loader2, CheckCircle, AlertTriangle } from 'lucide-react'
 import { useQuoteStore } from '@/hooks/useQuoteStore'
-import { fileToBase64 } from '@/lib/utils'
-import { cn } from '@/lib/utils'
+import { fileToBase64, generateId, cn } from '@/lib/utils'
+import { createClient } from '@/lib/supabase/client'
 import type { AIAnalysisResult } from '@/types'
 
 // ── Step 1 스키마 ──────────────────────────────────────────
@@ -162,17 +162,35 @@ export default function NewQuotePage() {
   // Step 3 → Step 4
   const goToEditor = async () => {
     const draft = useQuoteStore.getState().draft!
+    const supabase = createClient()
 
-    // 견적 DB 저장
-    const res = await fetch('/api/quotes', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(draft),
-    })
-    const json = await res.json()
-    if (json.data?.id) {
-      router.push(`/quote/${json.data.id}`)
+    // 1. 로그인 여부 확인
+    let { data: { user } } = await supabase.auth.getUser()
+
+    // 2. 비로그인 → 익명 로그인 시도
+    if (!user) {
+      const { data } = await supabase.auth.signInAnonymously()
+      user = data.user
     }
+
+    // 3. 익명 로그인 성공 → DB 저장 후 이동
+    if (user) {
+      try {
+        const res = await fetch('/api/quotes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(draft),
+        })
+        const json = await res.json()
+        if (json.data?.id) {
+          router.push(`/quote/${json.data.id}`)
+          return
+        }
+      } catch {}
+    }
+
+    // 4. 폴백: Zustand store 데이터로 draft 편집기 이동
+    router.push(`/quote/${generateId()}?draft=true`)
   }
 
   return (
