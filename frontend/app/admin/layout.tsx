@@ -12,17 +12,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   useEffect(() => {
     async function checkAccess() {
       const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
+      const { data: { session } } = await supabase.auth.getSession()
 
       // 로그인 안 된 경우 → 로그인 페이지로 이동
-      if (!user?.email) {
+      if (!session?.user?.email) {
         router.push(`/login?next=${pathname}`)
         return
       }
 
-      // 관리자 권한 체크 (ADMIN_EMAILS env 기반)
-      const res = await fetch('/api/admin/prices', { method: 'GET' })
-      if (res.status === 403) { setStatus('denied'); return }
+      // Authorization 헤더로 토큰 전달하여 관리자 권한 체크
+      const res = await fetch('/api/admin/check', {
+        headers: { 'Authorization': `Bearer ${session.access_token}` }
+      })
+      if (!res.ok) { setStatus('denied'); return }
       setStatus('ok')
     }
     checkAccess()

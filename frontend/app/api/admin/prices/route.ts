@@ -1,21 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { createClient } from '@/lib/supabase/server'
 
-/** 관리자 권한 체크 */
-async function checkAdmin(): Promise<boolean> {
-  const adminEmails = (process.env.ADMIN_EMAILS ?? '').split(',').map(e => e.trim()).filter(Boolean)
+async function checkAdmin(req: NextRequest): Promise<boolean> {
+  const adminEmails = (process.env.ADMIN_EMAILS ?? '')
+    .split(',').map(e => e.trim().toLowerCase()).filter(Boolean)
   if (adminEmails.length === 0) return false
 
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const token = req.headers.get('Authorization')?.replace('Bearer ', '')
+  if (!token) return false
+
+  const supabase = createAdminClient()
+  const { data: { user } } = await supabase.auth.getUser(token)
   if (!user?.email) return false
-  return adminEmails.includes(user.email)
+
+  return adminEmails.includes(user.email.toLowerCase())
 }
 
-/** GET /api/admin/prices — 전체 단가표 (비활성 포함) */
 export async function GET(req: NextRequest) {
-  if (!await checkAdmin()) {
+  if (!await checkAdmin(req)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
@@ -40,9 +42,8 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ data, error: null })
 }
 
-/** POST /api/admin/prices — 새 단가 항목 생성 */
 export async function POST(req: NextRequest) {
-  if (!await checkAdmin()) {
+  if (!await checkAdmin(req)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 

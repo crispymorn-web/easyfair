@@ -1,19 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { createClient } from '@/lib/supabase/server'
 
-async function checkAdmin(): Promise<boolean> {
-  const adminEmails = (process.env.ADMIN_EMAILS ?? '').split(',').map(e => e.trim()).filter(Boolean)
+async function checkAdmin(req: NextRequest): Promise<boolean> {
+  const adminEmails = (process.env.ADMIN_EMAILS ?? '')
+    .split(',').map(e => e.trim().toLowerCase()).filter(Boolean)
   if (adminEmails.length === 0) return false
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+
+  const token = req.headers.get('Authorization')?.replace('Bearer ', '')
+  if (!token) return false
+
+  const supabase = createAdminClient()
+  const { data: { user } } = await supabase.auth.getUser(token)
   if (!user?.email) return false
-  return adminEmails.includes(user.email)
+
+  return adminEmails.includes(user.email.toLowerCase())
 }
 
-/** PATCH /api/admin/prices/[id] — 단가 항목 수정 */
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
-  if (!await checkAdmin()) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  if (!await checkAdmin(req)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const body = await req.json()
   const supabase = createAdminClient()
@@ -28,9 +32,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   return NextResponse.json({ data, error: null })
 }
 
-/** DELETE /api/admin/prices/[id] — 단가 항목 삭제 (soft: active=false) */
 export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
-  if (!await checkAdmin()) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  if (!await checkAdmin(_req)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const supabase = createAdminClient()
   const { error } = await supabase

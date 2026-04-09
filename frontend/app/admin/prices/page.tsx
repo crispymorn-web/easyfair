@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { PriceCatalogItem, QuoteSection } from '@/types'
 import { SECTION_META } from '@/lib/constants'
+import { createClient } from '@/lib/supabase/client'
 import {
   Plus, Save, RefreshCw, X, CheckCircle2,
   ToggleLeft, ToggleRight
@@ -25,6 +26,24 @@ const EMPTY_ITEM: Partial<PriceCatalogItem> = {
 
 type EditState = Record<string, Partial<PriceCatalogItem>>
 
+async function getToken(): Promise<string | null> {
+  const supabase = createClient()
+  const { data: { session } } = await supabase.auth.getSession()
+  return session?.access_token ?? null
+}
+
+async function authFetch(url: string, options: RequestInit = {}) {
+  const token = await getToken()
+  return fetch(url, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+      ...(options.headers ?? {}),
+    },
+  })
+}
+
 export default function AdminPricesPage() {
   const [items, setItems] = useState<PriceCatalogItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -43,7 +62,7 @@ export default function AdminPricesPage() {
 
   const loadItems = useCallback(async () => {
     setLoading(true)
-    const res = await fetch('/api/admin/prices')
+    const res = await authFetch('/api/admin/prices')
     const json = await res.json()
     if (json.data) setItems(json.data)
     setLoading(false)
@@ -67,9 +86,8 @@ export default function AdminPricesPage() {
   const saveItem = async (item: PriceCatalogItem) => {
     if (!edits[item.id]) return
     setSaving(s => ({ ...s, [item.id]: true }))
-    const res = await fetch(`/api/admin/prices/${item.id}`, {
+    const res = await authFetch(`/api/admin/prices/${item.id}`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(edits[item.id]),
     })
     const json = await res.json()
@@ -85,9 +103,8 @@ export default function AdminPricesPage() {
 
   const toggleActive = async (item: PriceCatalogItem) => {
     const newActive = !item.active
-    const res = await fetch(`/api/admin/prices/${item.id}`, {
+    const res = await authFetch(`/api/admin/prices/${item.id}`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ active: newActive }),
     })
     const json = await res.json()
@@ -102,9 +119,8 @@ export default function AdminPricesPage() {
       showToast('item_key 와 한국어 이름을 입력해주세요')
       return
     }
-    const res = await fetch('/api/admin/prices', {
+    const res = await authFetch('/api/admin/prices', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ...newItem, venue_id: null }),
     })
     const json = await res.json()
