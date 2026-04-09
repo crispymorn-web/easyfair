@@ -1,7 +1,54 @@
 import { create } from 'zustand'
 import { Quote, QuoteItem, QuoteCreateInput, AIAnalysisResult } from '@/types'
 import { generateId, calcItemAmount } from '@/lib/utils'
-import { SECTION_META } from '@/lib/constants'
+import { SECTION_META, BASE_PRICES_USD, VENUE_COST_FACTORS } from '@/lib/constants'
+
+// AI 항목 설명 → 기준 단가 키워드 매핑
+function estimateUnitPrice(description: string, section: string, venueFactor: number): number {
+  const d = description.toLowerCase()
+
+  let base = 0
+
+  if (section === 'SPACE_VENUE') {
+    if (d.includes('clean'))                              base = BASE_PRICES_USD.cleaning_day
+    else if (d.includes('badge') || d.includes('배지'))   base = BASE_PRICES_USD.exhibitor_badge_person
+    else if (d.includes('move') || d.includes('반입'))    base = BASE_PRICES_USD.move_in_out
+    else                                                   base = BASE_PRICES_USD.raw_space_sqm
+  } else if (section === 'STRUCTURE') {
+    if (d.includes('moss') || d.includes('모스'))         base = BASE_PRICES_USD.moss_wall
+    else if (d.includes('counter') || d.includes('카운터')) base = BASE_PRICES_USD.display_counter
+    else if (d.includes('laminate') || d.includes('라미네이트')) base = BASE_PRICES_USD.wood_laminate_sqm
+    else if (d.includes('carpet') || d.includes('카펫'))  base = BASE_PRICES_USD.carpet_sqm
+    else if (d.includes('storage') || d.includes('창고')) base = BASE_PRICES_USD.storage_room
+    else if (d.includes('labor') || d.includes('인건') || d.includes('목공')) base = BASE_PRICES_USD.labor_day
+    else if (d.includes('ceiling') || d.includes('천장')) base = BASE_PRICES_USD.ceiling_sqm
+    else                                                   base = BASE_PRICES_USD.wall_panel_sqm
+  } else if (section === 'GRAPHICS') {
+    if (d.includes('design'))                             base = BASE_PRICES_USD.graphic_design
+    else if (d.includes('header') || d.includes('헤더')) base = BASE_PRICES_USD.header_signage
+    else if (d.includes('letter') || d.includes('레터') || d.includes('cut-out')) base = BASE_PRICES_USD.vinyl_lettering
+    else if (d.includes('large') || d.includes('대형') || d.includes('main') || d.includes('메인')) base = BASE_PRICES_USD.graphic_large
+    else if (d.includes('small') || d.includes('소형'))   base = BASE_PRICES_USD.graphic_small
+    else                                                   base = BASE_PRICES_USD.graphic_medium
+  } else if (section === 'AV_ELECTRICAL') {
+    if (d.includes('tv') || d.includes('monitor') || d.includes('모니터') || d.includes('55')) base = BASE_PRICES_USD.tv_55_rental
+    else if (d.includes('led') || d.includes('spot') || d.includes('조명')) base = BASE_PRICES_USD.led_spotlight
+    else if (d.includes('power') || d.includes('전원') || d.includes('분전')) base = BASE_PRICES_USD.power_distribution
+    else                                                   base = BASE_PRICES_USD.electrical_5kw
+  } else if (section === 'FURNITURE') {
+    if (d.includes('chair') || d.includes('의자'))        base = BASE_PRICES_USD.chair
+    else if (d.includes('brochure') || d.includes('브로슈어')) base = BASE_PRICES_USD.brochure_stand
+    else if (d.includes('table') || d.includes('테이블')) base = BASE_PRICES_USD.round_table
+    else                                                   base = BASE_PRICES_USD.misc_accessories
+  } else if (section === 'LOGISTICS') {
+    if (d.includes('pm') || d.includes('manage') || d.includes('관리')) base = BASE_PRICES_USD.pm_day
+    else if (d.includes('transport') || d.includes('운송') || d.includes('물류')) base = BASE_PRICES_USD.transport
+    else if (d.includes('teardown') || d.includes('철거')) base = BASE_PRICES_USD.teardown
+    else                                                   base = BASE_PRICES_USD.pm_day
+  }
+
+  return Math.round(base * venueFactor)
+}
 
 interface QuoteStore {
   // 현재 작업 중인 견적
@@ -50,9 +97,10 @@ export const useQuoteStore = create<QuoteStore>((set, get) => ({
 
   applyAIItems: (aiItems, venueId) => {
     const { usdKrw } = get()
-    // venue factor는 서버에서 적용됐다고 가정, 여기선 그대로 사용
+    const venueFactor = VENUE_COST_FACTORS[venueId] ?? VENUE_COST_FACTORS['default']
     const items: QuoteItem[] = aiItems.map((ai, idx) => {
-      const unitPrice = 0 // 단가는 서버 price DB에서 매핑 (추후 구현)
+      const unitPrice = estimateUnitPrice(ai.description, ai.section, venueFactor)
+      const amountUsd = ai.quantity * unitPrice
       return {
         id: generateId(),
         no: `AI.${idx + 1}`,
@@ -60,8 +108,8 @@ export const useQuoteStore = create<QuoteStore>((set, get) => ({
         quantity: ai.quantity,
         unit: ai.unit,
         unit_price_usd: unitPrice,
-        amount_usd: ai.quantity * unitPrice,
-        amount_krw: Math.round(ai.quantity * unitPrice * usdKrw),
+        amount_usd: amountUsd,
+        amount_krw: Math.round(amountUsd * usdKrw),
         notes: ai.notes,
         ai_confidence: ai.confidence,
         section: ai.section,
