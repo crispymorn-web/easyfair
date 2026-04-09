@@ -89,7 +89,7 @@ export default function NewQuotePage() {
   // Step 1 form
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<Step1Data>({
     resolver: zodResolver(step1Schema),
-    defaultValues: { booth_type: 'raw_space', booth_width: 6, booth_depth: 3, client_name: 'DONG-A ST' },
+    defaultValues: { booth_type: 'raw_space', booth_width: 6, booth_depth: 3, client_name: '메세어소시에이츠' },
   })
   const boothW = watch('booth_width') || 0
   const boothD = watch('booth_depth') || 0
@@ -278,7 +278,7 @@ export default function NewQuotePage() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="label">참가사명 *</label>
-                <input className="input" placeholder="DONG-A ST" {...register('client_name')} />
+                <input className="input" placeholder="메세어소시에이츠" {...register('client_name')} />
                 {errors.client_name && <p className="text-xs text-red-500 mt-1">{errors.client_name.message}</p>}
               </div>
               <div>
