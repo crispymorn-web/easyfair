@@ -17,6 +17,42 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ko">
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              tailwind = { config: {
+                theme: {
+                  extend: {
+                    colors: {
+                      brand: {
+                        50:  '#E8F5E9',
+                        100: '#C8E6C9',
+                        200: '#A5D6A7',
+                        400: '#66BB6A',
+                        600: '#2E7D4F',
+                        700: '#1B5E20',
+                        800: '#145230',
+                        900: '#0D3B22',
+                      },
+                      accent: {
+                        400: '#FFCA28',
+                        500: '#F9A825',
+                        600: '#F57F17',
+                      },
+                    },
+                    borderRadius: { DEFAULT: '10px' },
+                    fontFamily: {
+                      mono: ['JetBrains Mono', 'monospace'],
+                    },
+                  },
+                },
+              }}
+            `,
+          }}
+        />
+        <script src="https://cdn.tailwindcss.com" async={false} />
+      </head>
       <body className="bg-gray-50 text-gray-900 antialiased">
         <div className="flex h-screen overflow-hidden">
           <Sidebar />
